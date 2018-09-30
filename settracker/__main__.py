@@ -35,6 +35,7 @@ def main(argv=None):
 
     default_file_name = expand_file_name(None)
     default_group = os.getenv('SET_TRACKER_DEFAULT_GROUP')
+    default_target_reps = os.getenv('SET_TRACKER_DEFAULT_TARGET_REPS')
     default_date_time = datetime.now()
     default_date = default_date_time.strftime(DATE_FORMAT)
     default_time = default_date_time.strftime(TIME_FORMAT)
@@ -72,7 +73,7 @@ def main(argv=None):
              f'[now: {default_time}]')
 
     parser.add_argument(
-        '-T', '--target-reps', type=int, default=100,
+        '-T', '--target-reps', type=int, default=default_target_reps,
         help='Daily target repetitions [100]')
 
     parser.add_argument(
@@ -84,12 +85,16 @@ def main(argv=None):
         help='Only show chart in report (implies -r) [False]')
 
     parser.add_argument(
+        '-C', '--no-chart', dest='chart', action='store_false', default=True,
+        help='Don\'t show chart when reporting (implies -r) [True]')
+
+    parser.add_argument(
         '-D', '--days', type=int, default=30,
         help='Number of days to include in report [30]')
 
     args = parser.parse_args(argv)
     file_path = expand_file_name(args.file_name)
-    report_only = args.report_only or args.chart_only
+    report_only = args.report_only or args.chart_only or not args.chart
     group = args.group
     quantity = args.quantity
     date_time = datetime.combine(args.date, args.time)
@@ -144,7 +149,7 @@ def main(argv=None):
     if args.chart_only:
         print_chart(session, group, days, target_reps)
     else:
-        print_report(session, group, days, target_reps)
+        print_report(session, group, days, target_reps, chart=args.chart)
 
     return 0
 

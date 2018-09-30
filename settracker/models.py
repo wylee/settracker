@@ -130,29 +130,24 @@ def add_set(session, group, quantity, date_time):
     return new_set
 
 
-DayInfo = namedtuple('DayInfo', 'date date_string sets num_sets num_reps target to_go')
+DayInfo = namedtuple(
+    'DayInfo', 'date date_string sets num_sets num_reps target to_go extra behind')
 
 
-def get_day_info(session, group, days=30, target_reps=100):
+def get_day_info(session, group, days=30, target_reps=100, skip_leading=True):
     """Get info for the specified number of days."""
     q = session.query(Set)
     q = q.filter_by(group=group)
 
-    if days:
-        delta = timedelta(days=(days - 1))
-        start_date = date.today() - delta
-        q = q.filter(Set.date_time >= start_date)
-
+    delta = timedelta(days=(days - 1))
+    start_date = date.today() - delta
+    end_date = start_date + timedelta(days=days)
+    q = q.filter(Set.date_time >= start_date)
+    q = q.filter(Set.date_time <= end_date)
     q = q.order_by('date_time', 'id')
-
     records = q.all()
-    sets = OrderedDict()
 
-    if days:
-        end_date = start_date + timedelta(days=days)
-    else:
-        start_date = records[0].date
-        end_date = records[-1].date + ONE_DAY
+    sets = OrderedDict()
 
     current_date = start_date
     while current_date < end_date:
@@ -162,10 +157,45 @@ def get_day_info(session, group, days=30, target_reps=100):
     for record in records:
         sets[record.date].append(record)
 
-    for group_date, day_sets in sets.items():
+    sets = tuple(sets.items())
+
+    if skip_leading:
+        skip = 0
+        for (group_date, day_sets) in sets:
+            if not day_sets:
+                skip += 1
+            else:
+                break
+        if skip:
+            sets = sets[skip:]
+
+    prev_behind = 0
+    last = len(sets) - 1
+
+    for i, (group_date, day_sets) in enumerate(sets):
         date_string = group_date.strftime(DATE_DISPLAY_FORMAT)
         num_sets = len(day_sets)
         num_reps = sum(s.quantity for s in day_sets)
         to_go = target_reps - num_reps
-        info = DayInfo(group_date, date_string, day_sets, num_sets, num_reps, target_reps, to_go)
+
+        if to_go < 0:
+            extra = -to_go
+            to_go = 0
+            behind = 0
+        elif to_go > 0:
+            extra = 0
+            behind = 0 if i == last else to_go
+        else:
+            extra = 0
+            behind = 0
+
+        behind = behind + prev_behind - extra
+        behind = 0 if behind < 0 else behind
+
+        info = DayInfo(
+            group_date, date_string, day_sets, num_sets, num_reps, target_reps, to_go, extra,
+            behind)
+
+        prev_behind = behind
+
         yield info

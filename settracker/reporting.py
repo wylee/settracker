@@ -5,19 +5,47 @@ from .models import get_day_info
 
 def print_report(session, group, days=30, target_reps=100, *, chart=True):
     day_info = list(get_day_info(session, group, days, target_reps))
+    skipped = days - len(day_info)
+    days = len(day_info)
+
+    if skipped:
+        print(f'Skipped {skipped} day{"" if skipped == 1 else "s"} with no recorded sets')
 
     if not day_info:
         print('Nothing to report (no sets recorded)')
         return
 
-    date_width = len(day_info[0].date_string)
     total_sets = sum(info.num_sets for info in day_info)
     total_reps = sum(info.num_reps for info in day_info)
+
+    date_width = len(day_info[0].date_string)
     sets_width = len(str(total_sets)) + 2
     reps_width = len(str(total_reps)) + 2
 
-    for info in day_info:
-        message = f'{info.to_go} to go' if info.to_go > 0 else 'Done!'
+    last = days - 1
+    for i, info in enumerate(day_info):
+        if i == last:
+            if info.behind:
+                if info.to_go:
+                    message = f'{info.to_go} to go + {info.behind} behind'
+                else:
+                    message = f'{info.behind} behind'
+            elif info.to_go:
+                message = f'{info.to_go} to go'
+            else:
+                if i > 0:
+                    behind = day_info[i - 1].behind
+                    done = 'Caught up' if behind else 'Done'
+                    extra = info.extra - behind
+                else:
+                    done = 'Done'
+                    extra = info.extra
+                extra = f' + {extra} extra' if extra else ''
+                message = f'{done}{extra}!'
+        else:
+            extra = f' + {info.extra} extra' if info.extra else ''
+            message = f'{info.to_go} not done' if info.to_go else f'Done{extra}!'
+
         print(
             f'{info.date_string}'
             f'{info.num_sets: >{sets_width}} sets'
