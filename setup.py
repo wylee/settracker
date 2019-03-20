@@ -15,7 +15,7 @@ setup(
     license='MIT',
     packages=find_packages(),
     install_requires=[
-        'SQLAlchemy>=1.1.15',
+        'SQLAlchemy>=1.3.1',
     ],
     entry_points="""
     [console_scripts]
