@@ -135,6 +135,7 @@ def main(argv=None):
                 return abort()
 
     print(f'Set group: {group.name}')
+    print(f'Target reps: {target_reps}')
 
     if not report_only:
         if quantity is None:
