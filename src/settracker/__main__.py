@@ -35,7 +35,7 @@ def main(argv=None):
 
     default_file_name = expand_file_name(None)
     default_group = os.getenv('SET_TRACKER_DEFAULT_GROUP')
-    default_target_reps = os.getenv('SET_TRACKER_DEFAULT_TARGET_REPS')
+    default_target_reps = os.getenv('SET_TRACKER_DEFAULT_TARGET_REPS', 100)
     default_date_time = datetime.now()
     default_date = default_date_time.strftime(DATE_FORMAT)
     default_time = default_date_time.strftime(TIME_FORMAT)
