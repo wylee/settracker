@@ -11,10 +11,10 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.6"
-SQLAlchemy = "^1.4.20"
+python = "^3.7"
+SQLAlchemy = "^1.4"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 black = "*"
 
 [tool.poetry.scripts]

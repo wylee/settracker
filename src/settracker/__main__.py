@@ -31,66 +31,101 @@ def main(argv=None):
     """
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    description = textwrap.dedent(f'    {main.__doc__.strip()}')
+    description = textwrap.dedent(f"    {main.__doc__.strip()}")
 
     default_file_name = expand_file_name(None)
-    default_group = os.getenv('SET_TRACKER_DEFAULT_GROUP')
-    default_target_reps = os.getenv('SET_TRACKER_DEFAULT_TARGET_REPS', 100)
+    default_group = os.getenv("SET_TRACKER_DEFAULT_GROUP")
+    default_target_reps = os.getenv("SET_TRACKER_DEFAULT_TARGET_REPS", 100)
     default_date_time = datetime.now()
     default_date = default_date_time.strftime(DATE_FORMAT)
     default_time = default_date_time.strftime(TIME_FORMAT)
 
     parser = argparse.ArgumentParser(
-        prog='set-tracker',
+        prog="set-tracker",
         description=description,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     parser.add_argument(
-        '-f', '--file-name', default=None,
-        help='SQLite database file; '
-             'defaults to sets.db (change via SET_TRACKER_DEFAULT_FILE); '
-             'can be specified with or without .db suffix; '
-             'relative file paths are searched for in the current directory '
-             '(set SET_TRACKER_BASE_DIR to search in a different directory) '
-             f'[{default_file_name}]')
+        "-f",
+        "--file-name",
+        default=None,
+        help="SQLite database file; "
+        "defaults to sets.db (change via SET_TRACKER_DEFAULT_FILE); "
+        "can be specified with or without .db suffix; "
+        "relative file paths are searched for in the current directory "
+        "(set SET_TRACKER_BASE_DIR to search in a different directory) "
+        f"[{default_file_name}]",
+    )
 
     parser.add_argument(
-        'quantity', nargs='?', type=positive_int_type, default=None,
-        help='Number of reps done in set; if not specified, will be prompted for')
+        "quantity",
+        nargs="?",
+        type=positive_int_type,
+        default=None,
+        help="Number of reps done in set; if not specified, will be prompted for",
+    )
 
-    group_help = f'[{default_group}]' if default_group else ''
-    parser.add_argument('group', nargs='?', default=default_group, help=group_help)
-
-    parser.add_argument(
-        '-d', '--date', type=date_type, default=default_date,
-        help='Date set was done in YYYY-MM-DD format '
-             f'[today: {default_date}]')
-
-    parser.add_argument(
-        '-t', '--time', type=time_type, default=default_time,
-        help='Time set was done in HH:MM format (24-hour clock) '
-             f'[now: {default_time}]')
+    group_help = f"[{default_group}]" if default_group else ""
+    parser.add_argument("group", nargs="?", default=default_group, help=group_help)
 
     parser.add_argument(
-        '-T', '--target-reps', type=int, default=default_target_reps,
-        help='Daily target repetitions [100]')
+        "-d",
+        "--date",
+        type=date_type,
+        default=default_date,
+        help="Date set was done in YYYY-MM-DD format " f"[today: {default_date}]",
+    )
 
     parser.add_argument(
-        '-r', '--report-only', action='store_true', default=False,
-        help='Only show report (skip adding a set) [False]')
+        "-t",
+        "--time",
+        type=time_type,
+        default=default_time,
+        help="Time set was done in HH:MM format (24-hour clock) "
+        f"[now: {default_time}]",
+    )
 
     parser.add_argument(
-        '-c', '--chart-only', action='store_true', default=False,
-        help='Only show chart in report (implies -r) [False]')
+        "-T",
+        "--target-reps",
+        type=int,
+        default=default_target_reps,
+        help="Daily target repetitions [100]",
+    )
 
     parser.add_argument(
-        '-C', '--no-chart', dest='chart', action='store_false', default=True,
-        help='Don\'t show chart when reporting (implies -r) [True]')
+        "-r",
+        "--report-only",
+        action="store_true",
+        default=False,
+        help="Only show report (skip adding a set) [False]",
+    )
 
     parser.add_argument(
-        '-D', '--days', type=int, default=30,
-        help='Number of days to include in report [30]')
+        "-c",
+        "--chart-only",
+        action="store_true",
+        default=False,
+        help="Only show chart in report (implies -r) [False]",
+    )
+
+    parser.add_argument(
+        "-C",
+        "--no-chart",
+        dest="chart",
+        action="store_false",
+        default=True,
+        help="Don't show chart when reporting (implies -r) [True]",
+    )
+
+    parser.add_argument(
+        "-D",
+        "--days",
+        type=int,
+        default=30,
+        help="Number of days to include in report [30]",
+    )
 
     args = parser.parse_args(argv)
     file_path = expand_file_name(args.file_name)
@@ -101,12 +136,14 @@ def main(argv=None):
     days = args.days
     target_reps = args.target_reps
 
-    print(f'Database file: {file_path}')
+    print(f"Database file: {file_path}")
 
     if not os.path.exists(file_path):
-        confirmed = confirm('Database file does not exist. Create?')
+        confirmed = confirm("Database file does not exist. Create?")
         if confirmed:
             create_tables(file_path)
+        else:
+            abort()
 
     session = get_session(file_path)
 
@@ -119,14 +156,14 @@ def main(argv=None):
     else:
         # If a group was not specified, ask the user to select a group
         # or specify the name of a new group.
-        groups = list(session.query(SetGroup).order_by('name').all())
+        groups = list(session.query(SetGroup).order_by("name").all())
         if groups:
-            print('Available set groups:')
+            print("Available set groups:")
             for i, g in enumerate(groups, 1):
-                print(f'    {i}) {g.name}')
+                print(f"    {i}) {g.name}")
         else:
-            print('No set groups')
-        group = prompt('Select a group or enter a new group name:')
+            print("No set groups")
+        group = prompt("Select a group or enter a new group name:")
         if group.isdigit():
             group = groups[int(group) - 1]
         else:
@@ -134,15 +171,15 @@ def main(argv=None):
             if group is None:
                 return abort()
 
-    print(f'Set group: {group.name}')
-    print(f'Target reps: {target_reps}')
+    print(f"Set group: {group.name}")
+    print(f"Target reps: {target_reps}")
 
     if not report_only:
         if quantity is None:
-            quantity = prompt('How many reps did you do?', converter=int)
+            quantity = prompt("How many reps did you do?", converter=int)
         new_set = add_set(session, group, quantity, date_time)
         if new_set is not None:
-            print(f'Added {new_set.quantity} reps')
+            print(f"Added {new_set.quantity} reps")
         else:
             return abort()
 
@@ -155,7 +192,7 @@ def main(argv=None):
     return 0
 
 
-def abort(message='Aborted', code=0):
+def abort(message="Aborted", code=0):
     print(message)
     return code
 
@@ -171,9 +208,9 @@ def time_type(value):
 def positive_int_type(value):
     value = int(value)
     if value < 1:
-        raise ValueError('Expected a positive number')
+        raise ValueError("Expected a positive number")
     return value
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

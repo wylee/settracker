@@ -13,11 +13,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from .util import confirm, expand_file_name
 
 
-DATE_FORMAT = '%Y-%m-%d'
-TIME_FORMAT = '%H:%M'
-DATETIME_FORMAT = f'{DATE_FORMAT}@{TIME_FORMAT}'
-DATE_DISPLAY_FORMAT = '%d %b %Y'
-DATETIME_DISPLAY_FORMAT = f'{DATE_DISPLAY_FORMAT} at {TIME_FORMAT}'
+DATE_FORMAT = "%Y-%m-%d"
+TIME_FORMAT = "%H:%M"
+DATETIME_FORMAT = f"{DATE_FORMAT}@{TIME_FORMAT}"
+DATE_DISPLAY_FORMAT = "%d %b %Y"
+DATETIME_DISPLAY_FORMAT = f"{DATE_DISPLAY_FORMAT} at {TIME_FORMAT}"
 ONE_DAY = timedelta(days=1)
 
 
@@ -28,7 +28,7 @@ Session = sessionmaker()
 @lru_cache()
 def get_engine(file_name):
     file_name = expand_file_name(file_name)
-    url = f'sqlite:///{file_name}'
+    url = f"sqlite:///{file_name}"
     return create_engine(url)
 
 
@@ -44,30 +44,30 @@ def create_tables(file_name):
 
 class SetGroup(Base):
 
-    __tablename__ = 'set_groups'
+    __tablename__ = "set_groups"
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    sets = relationship('Set', back_populates='group')
+    sets = relationship("Set", back_populates="group")
 
 
 class Set(Base):
 
-    __tablename__ = 'sets'
+    __tablename__ = "sets"
 
     """A set of repetitions done at a specified date/time."""
 
     def __init__(self, **kwargs):
-        date_time = kwargs.get('date_time')
+        date_time = kwargs.get("date_time")
         if date_time is None:
-            kwargs['date_time'] = datetime.now()
+            kwargs["date_time"] = datetime.now()
         super().__init__(**kwargs)
 
     id = Column(Integer, primary_key=True)
     quantity = Column(Integer, nullable=False)
     date_time = Column(DateTime, nullable=False)
-    group_id = Column(Integer, ForeignKey('set_groups.id'), nullable=False)
-    group = relationship('SetGroup', back_populates='sets')
+    group_id = Column(Integer, ForeignKey("set_groups.id"), nullable=False)
+    group = relationship("SetGroup", back_populates="sets")
 
     @property
     def date(self):
@@ -119,8 +119,8 @@ def get_or_add_set_group(session, name):
 def add_set(session, group, quantity, date_time):
     new_set = Set(group=group, quantity=quantity, date_time=date_time)
     confirmed = confirm(
-        f'Add set of {new_set.quantity} reps '
-        f'for {new_set.date_time_display_string}?'
+        f"Add set of {new_set.quantity} reps "
+        f"for {new_set.date_time_display_string}?"
     )
     if not confirmed:
         session.expunge_all()
@@ -131,7 +131,8 @@ def add_set(session, group, quantity, date_time):
 
 
 DayInfo = namedtuple(
-    'DayInfo', 'date date_string sets num_sets num_reps target to_go extra behind')
+    "DayInfo", "date date_string sets num_sets num_reps target to_go extra behind"
+)
 
 
 def get_day_info(session, group, days=30, target_reps=100, skip_leading=True):
@@ -144,7 +145,7 @@ def get_day_info(session, group, days=30, target_reps=100, skip_leading=True):
     end_date = start_date + timedelta(days=days)
     q = q.filter(Set.date_time >= start_date)
     q = q.filter(Set.date_time <= end_date)
-    q = q.order_by('date_time', 'id')
+    q = q.order_by("date_time", "id")
     records = q.all()
 
     sets = OrderedDict()
@@ -193,8 +194,16 @@ def get_day_info(session, group, days=30, target_reps=100, skip_leading=True):
         behind = 0 if behind < 0 else behind
 
         info = DayInfo(
-            group_date, date_string, day_sets, num_sets, num_reps, target_reps, to_go, extra,
-            behind)
+            group_date,
+            date_string,
+            day_sets,
+            num_sets,
+            num_reps,
+            target_reps,
+            to_go,
+            extra,
+            behind,
+        )
 
         prev_behind = behind
 
