@@ -130,7 +130,7 @@ def print_chart(
     if num_days == 1:
         label = " Past day"
     else:
-        label = f" Past {num_days} day "
+        label = f" Past {num_days} days"
     print(f"{label:-^{chart_width}}")
 
     if column_width >= 3:
