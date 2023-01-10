@@ -5,11 +5,11 @@ import sys
 import textwrap
 from datetime import datetime
 
+from .app import SetTrackerApp, Data
 from .models import DATE_FORMAT, TIME_FORMAT
 from .models import create_tables, get_session
 from .models import SetGroup
 from .models import add_set, get_or_add_set_group
-from .reporting import print_chart, print_report
 from .util import confirm, expand_file_name, prompt
 
 
@@ -41,7 +41,7 @@ def main(argv=None):
     default_time = default_date_time.strftime(TIME_FORMAT)
 
     parser = argparse.ArgumentParser(
-        prog="set-tracker",
+        prog="settracker",
         description=description,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -127,6 +127,13 @@ def main(argv=None):
         help="Number of days to include in report [30]",
     )
 
+    parser.add_argument(
+        "--debug",
+        dest="debug",
+        action="store_true",
+        default=False,
+    )
+
     args = parser.parse_args(argv)
     file_path = expand_file_name(args.file_name)
     report_only = args.report_only or args.chart_only or not args.chart
@@ -135,6 +142,7 @@ def main(argv=None):
     date_time = datetime.combine(args.date, args.time)
     days = args.days
     target_reps = args.target_reps
+    debug = args.debug
 
     print(f"Database file: {file_path}")
 
@@ -146,6 +154,7 @@ def main(argv=None):
             abort()
 
     session = get_session(file_path)
+    groups = list(session.query(SetGroup).order_by("name").all())
 
     if group:
         # If a group was specified, look it up. If it doesn't exist,
@@ -153,41 +162,21 @@ def main(argv=None):
         group = get_or_add_set_group(session, group)
         if group is None:
             return abort()
-    else:
-        # If a group was not specified, ask the user to select a group
-        # or specify the name of a new group.
+
+    interactive = not group or not quantity or report_only
+
+    if interactive:
         groups = list(session.query(SetGroup).order_by("name").all())
-        if groups:
-            print("Available set groups:")
-            for i, g in enumerate(groups, 1):
-                print(f"    {i}) {g.name}")
-        else:
-            print("No set groups")
-        group = prompt("Select a group or enter a new group name:")
-        if group.isdigit():
-            group = groups[int(group) - 1]
-        else:
-            group = get_or_add_set_group(session, group)
-            if group is None:
-                return abort()
-
-    print(f"Set group: {group.name}")
-    print(f"Target reps: {target_reps}")
-
-    if not report_only:
-        if quantity is None:
-            quantity = prompt("How many reps did you do?", converter=int)
+        app = SetTrackerApp(Data(groups, group, quantity, date_time, debug))
+        app.run()
+    else:
+        print(f"Set group: {group.name}")
+        print(f"Target reps: {target_reps}")
         new_set = add_set(session, group, quantity, date_time)
         if new_set is not None:
             print(f"Added {new_set.quantity} reps")
         else:
             return abort()
-
-    print()
-    if args.chart_only:
-        print_chart(session, group, days, target_reps)
-    else:
-        print_report(session, group, days, target_reps, chart=args.chart)
 
     return 0
 

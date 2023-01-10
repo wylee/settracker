@@ -1,0 +1,23 @@
+Screen {
+}
+
+Header {
+  height: 3;
+}
+
+Group {
+  layout: vertical;
+  height: 3;
+  margin: 1;
+}
+
+RepForm {
+  layout: horizontal;
+  height: 5;
+  margin: 1;
+}
+
+RepInput {
+  width: 25%;
+  min-width: 25;
+}

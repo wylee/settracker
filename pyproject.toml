@@ -13,6 +13,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.11"
 SQLAlchemy = "^1.4"
+textual = {extras = ["dev"], version = "^0.9.1"}
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
